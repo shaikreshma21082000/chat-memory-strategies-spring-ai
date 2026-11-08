@@ -17,6 +17,9 @@ public class OpenAiController {
         return openAiService.getResponse(question,userId);
     }
 
-
+    @GetMapping("/jdbc-chat")
+    public Flux<String> getJdbcData(@RequestParam String question, @RequestParam String userId) {
+        return openAiService.getJdbcResponse(question, userId);
+    }
 
 }

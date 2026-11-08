@@ -7,9 +7,12 @@ import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import java.util.List;
 
 import static org.springframework.ai.chat.client.ChatClient.builder;
@@ -26,10 +29,29 @@ public class ChatClientConfig {
     }
 
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, ChatMemory chatMemory) {
+    public ChatClient chatClient(ChatModel chatModel, @Qualifier("chatMemory") ChatMemory chatMemory) {
+        return buildChatClient(chatModel, chatMemory);
+    }
+
+    // JDBC Chat Memory Configuration
+
+    @Bean
+    public ChatMemory jdbcChatMemory(JdbcChatMemoryRepository repository) {
+        return MessageWindowChatMemory.builder()
+                .chatMemoryRepository(repository)
+                .maxMessages(3)
+                .build();
+    }
+
+    @Bean
+    public ChatClient jdbcChatClient(ChatModel chatModel, @Qualifier("jdbcChatMemory") ChatMemory jdbcChatMemory) {
+        return buildChatClient(chatModel, jdbcChatMemory);
+    }
+
+    private ChatClient buildChatClient(ChatModel chatModel, ChatMemory chatMemory) {
         MessageChatMemoryAdvisor messageChatMemoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).order(2).build();
         return builder(chatModel)
-                .defaultAdvisors(List.of(new SimpleLoggerAdvisor(),new TokenUsageAdvisor(),messageChatMemoryAdvisor))
+                .defaultAdvisors(List.of(new SimpleLoggerAdvisor(), new TokenUsageAdvisor(), messageChatMemoryAdvisor))
                 .build();
     }
 
